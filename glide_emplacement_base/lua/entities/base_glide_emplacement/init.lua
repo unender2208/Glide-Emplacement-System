@@ -12,6 +12,26 @@ function ENT:OnPostInitialize()
     self.supportCount = 0
 end
 
+--- Implement this base class function.
+function ENT:OnDriverExit()
+    local keepOn = IsValid( self.lastDriver ) and self.lastDriver:KeyDown( IN_WALK )
+
+    if not self.hasTheDriverBeenRagdolled and not keepOn then
+        self:TurnOff()
+    end
+end
+
+--- Override this base class function.
+function ENT:Repair()
+    BaseClass.Repair( self )
+end
+
+--- Implement this base class function.
+function ENT:OnSeatInput( seatIndex, action, pressed )
+    if not pressed or seatIndex > 1 then return end
+end
+
+
 function ENT:CreateSupport( offset, angle, params  ) -- Made specifically for the emplacement base, helps with models that dont have proper physics on the tripod/bipod, or models that are just the gun lol.
     params = params or {}
 
@@ -33,21 +53,25 @@ function ENT:CreateSupport( offset, angle, params  ) -- Made specifically for th
     return supportBase
 end
 
---- Implement this base class function.
-function ENT:OnDriverExit()
-    local keepOn = IsValid( self.lastDriver ) and self.lastDriver:KeyDown( IN_WALK )
+function Glide.CreateMissileTurret( vehicle, offset, angles )
+    local turret = ents.Create( "glide_missile_turret" )
 
-    if not self.hasTheDriverBeenRagdolled and not keepOn then
-        self:TurnOff()
+    if not turret or not IsValid( turret ) then
+        vehicle:Remove()
+        error( "Failed to spawn turret! Vehicle removed!" )
+        return
     end
-end
 
---- Override this base class function.
-function ENT:Repair()
-    BaseClass.Repair( self )
-end
+    vehicle:DeleteOnRemove( turret )
 
---- Implement this base class function.
-function ENT:OnSeatInput( seatIndex, action, pressed )
-    if not pressed or seatIndex > 1 then return end
+    if vehicle.turretCount then
+        vehicle.turretCount = vehicle.turretCount + 1
+    end
+
+    turret:SetParent( vehicle )
+    turret:SetLocalPos( offset )
+    turret:SetLocalAngles( angles )
+    turret:Spawn()
+
+    return turret
 end
