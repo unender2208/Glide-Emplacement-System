@@ -153,7 +153,7 @@ if SERVER then
         turret:SetShootLoopSound( "glide/glide_emplacement_base/glide_dhsk/dshk_loop.wav" )
         turret:SetShootStopSound( "glide/glide_emplacement_base/glide_dhsk/dshk_lastshot.wav" )
 
-        turret.BulletDamage = 10
+        turret.BulletDamage = 40
         Glide.HideEntity( turret, true )
         Glide.HideEntity( turret:GetGunBody(), true )
 
