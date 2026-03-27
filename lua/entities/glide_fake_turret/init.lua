@@ -9,13 +9,16 @@ function ENT:Initialize()
     self:SetMoveType( MOVETYPE_VPHYSICS )
     self:DrawShadow( false )
 
-    self:SetBulletOffset( Vector( 40, 0, 5 ) )
     self:SetMinPitch( -30 )
     self:SetMaxPitch( 30 )
     self:SetMinYaw( -1 )
     self:SetMaxYaw( -1 )
 
     self:SetViewpunchMultiplier( 1 )
+    self:SetEffectOffset( Vector( 0, 0, 0 ) )
+    self:SetEnableFiringEffect( false )
+    self:SetEffectType( "none" )
+    self:SetEffectDirection( Vector( 0, 0, 1 ))
 
     local body = ents.Create( "prop_dynamic_override" )
     body:SetModel( "models/props_junk/PopCan01a.mdl" )

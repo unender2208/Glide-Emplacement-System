@@ -3,10 +3,6 @@ AddCSLuaFile( "cl_init.lua" )
 
 include( "shared.lua" )
 
-util.AddNetworkString( "CrosshairAimPos" )
-
-ENT.aimPos = nil
-
 function ENT:Initialize()
     self:SetModel( "models/glide/weapons/homing_rocket.mdl" )
     self:SetSolid( SOLID_VPHYSICS )
@@ -72,7 +68,6 @@ function ENT:PhysicsCollide( data )
         self:Remove()
         return
     end
-
     self:Explode()
 end
 
@@ -84,6 +79,7 @@ end
 
 local FrameTime = FrameTime
 local Approach = math.Approach
+local GetClosestFlare = Glide.GetClosestFlare
 local TraceHull = util.TraceHull
 
 local ray = {}
@@ -97,15 +93,13 @@ local traceData = {
 }
 
 function ENT:Think()
-    net.Receive( "CrosshairAimPos", function ()
-        self.aimPos = net.ReadVector()
-    end)
-    
     local t = CurTime()
+
     if t > self.lifeTime then
         self:Explode()
         return
     end
+
     self:NextThink( t )
 
     local phys = self:GetPhysicsObject()
@@ -122,14 +116,13 @@ function ENT:Think()
 
     local dt = FrameTime()
 
-    self:SetEffectiveness( Approach( self:GetEffectiveness(), 1, dt  ) )
+    self:SetEffectiveness( Approach( self:GetEffectiveness(), 1, dt * 4 ) )
 
     -- Point towards the target
+    local targetPos = self.attacker:GlideGetAimPos()
     local myPos = self:GetPos()
-    local fw = self:GetForward()
-    local targetPos = self.aimPos or Vector()
     local dir = targetPos - myPos
-    dir:Normalize()
+    local fw = self:GetForward()
 
     -- If the target is outside our FOV, stop tracking it
     if math.abs( dir:Dot( fw ) ) < self.missThreshold then
@@ -139,7 +132,7 @@ function ENT:Think()
         -- Let PhysicsSimulate handle this
         self.aimDir = dir
     end
-    
+
     traceData.start = myPos
     traceData.endpos = myPos + self:GetVelocity() * dt * 2
     traceData.filter[1] = self
@@ -149,6 +142,14 @@ function ENT:Think()
     TraceHull( traceData )
 
     if not ray.HitSky and ray.Hit then
+        if ray.MatType == 77 then
+            local eff = EffectData() -- Cool spark effect
+            eff:SetOrigin( self:GetPos() )
+            eff:SetScale( 7 )
+            eff:SetColor( 100 )
+            eff:SetNormal( -self:GetForward() )
+            util.Effect( "glide_metal_impact", eff )
+        end
         self:Explode()
     end
 
@@ -159,6 +160,7 @@ local ApproachAngle = math.ApproachAngle
 local ZERO_VEC = Vector()
 
 function ENT:PhysicsSimulate( phys, dt )
+    
     if not self.applyThrust then return end
 
     -- Accelerate to reach maxSpeed

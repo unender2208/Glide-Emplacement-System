@@ -26,9 +26,8 @@ end
 
 --- Implement this base class function.
 function ENT:OnSeatInput( seatIndex, action, pressed )
-    if not pressed or seatIndex > 1 then return end
+  --  print( action )
 end
-
 
 function ENT:CreateSupport( offset, angle, params  ) -- Made specifically for the emplacement base, helps with models that dont have proper physics on the tripod/bipod, or models that are just the gun lol.
     params = params or {}

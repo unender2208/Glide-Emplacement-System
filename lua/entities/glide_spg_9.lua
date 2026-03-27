@@ -94,12 +94,10 @@ if CLIENT then
             local Camera = Glide.Camera
             local vehicle = Camera.vehicle
             local rad = math.rad( bodyAng[2] ) -- The angle we're using as reference
-            --local rad2 = math.rad( bodyAng[1] ) -- The angle we're using as reference ( for pitch )
             localEyePos = vehicle:WorldToLocal( self:GetPos() ) 
             localEyePos[3] = localEyePos[3] + 40
             localEyePos[2] = localEyePos[2] + math.cos( rad ) * 10
             localEyePos[1] = localEyePos[1] + math.sin( rad ) * -10
-           -- Camera.fov = 20
 
             return localEyePos
         end
@@ -169,10 +167,10 @@ if SERVER then
             ReloadStartSound = "glide/glide_emplacement_base/glide_spg9/reload.wav",
             SingleShotSound = "glide/glide_emplacement_base/glide_spg9/fire.wav",
             MissileModel = "models/glide/glide_emplacements/pg9.mdl",
+            MissileBodygroupDelay = 0.25,
             MissileBodyGroup = { 1, 1 },
             FiringAnimation = "fire"
         } )
-
 
         local turretSeat = self:CreateSeat( Vector( 0, 0, 0 ), Angle( 0, 270, 0 ), Vector( -80, -100, 0 ), true  )
         local turret = self:CreateFakeTurret( self, Vector( -0, 0, 0 ), Angle() )
@@ -181,9 +179,11 @@ if SERVER then
         turret:SetMinPitch( -3 )
         turret:SetMaxPitch( 3 )
         turret:SetFireDelay( 8 )
+        turret:SetEnableFiringEffect( true )
+        turret:SetEffectType( "cannon" ) -- Selecting what sort of effect we want, check the github / decomp this and look in fake_glide_turret/shared for examples
+        turret:SetEffectOffset( Vector ( -30, 0, 35 ) )
+        turret:SetEffectDirection( self:GetForward() * -1 )
         turret:SetViewpunchMultiplier( 80 )
-
-        turret:SetBulletOffset( Vector( -60, 0, 35 ) ) -- Not for bullets, but for the effect
 
         Glide.HideEntity( turret, true )
         Glide.HideEntity( turret:GetGunBody(), true )
@@ -195,18 +195,13 @@ if SERVER then
 
     end
 
-    function ENT:OnUpdateFeatures()
+    function ENT:OnUpdateFeatures() -- Due to weird jittering effects on moving the seat in client, im doing it here.
         local turret = self:GetTurret()
-
         if IsValid( turret ) then
             -- The player on our "turret seat" should be the user of the actual turret entity
             turret:UpdateUser( self:GetSeatDriver( 1 ) )
         end
-    end
-
-    function ENT:OnPostThink() -- Due to weird jittering effects on moving the seat in client, im doing it here. Sorry!
-        local turret = self:GetTurret()
-        if not IsValid( turret ) then return end
+        
         local bodyAng = turret:GetLastBodyAngle() 
         local seat = self:GetTurretSeat()
 
@@ -225,5 +220,6 @@ if SERVER then
             seat:SetPos( LTWVector )
         end
     end
+    
 end
 

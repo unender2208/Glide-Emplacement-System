@@ -2,7 +2,7 @@ AddCSLuaFile()
 
 ENT.Type = "anim"
 ENT.Base = "base_anim"
-ENT.PrintName = "Fake Vehicle Turret" -- Used soley for the angle / rotation stuff, effects, & viewpunch
+ENT.PrintName = "Fake Vehicle Turret" -- Used soley for the angle / rotation stuff, effects, & viewpunch. Useful for VSWEP's or anything that dosent fire the traditional bullet
 
 ENT.Spawnable = false
 ENT.AdminOnly = false
@@ -12,20 +12,18 @@ ENT.PhysgunDisabled = true
 ENT.DoNotDuplicate = true
 ENT.DisableDuplicator = true
 
-ENT.BulletDamage = 10
-ENT.BulletMaxDistance = 50000
-ENT.BulletExplosionRadius = 0
-
 function ENT:SetupDataTables()
-
     self:NetworkVar( "Bool", "IsFiring" )
     self:NetworkVar( "Float", "FireDelay" )
     self:NetworkVar( "Entity", "GunUser" )
     self:NetworkVar( "Entity", "GunBody" )
-    self:NetworkVar( "Vector", "BulletOffset" )
     self:NetworkVar( "Angle", "LastBodyAngle" )
 
     self:NetworkVar( "Int", "ViewpunchMultiplier" )
+    self:NetworkVar( "Bool", "EnableFiringEffect" )
+    self:NetworkVar( "Vector", "EffectOffset" )  
+    self:NetworkVar( "Vector", "EffectDirection" )  -- Sets the direction of our effect, has to be a normal vector
+    self:NetworkVar( "String", "EffectType" ) 
 
     self:NetworkVar( "Float", "MinPitch" )
     self:NetworkVar( "Float", "MaxPitch" )
@@ -70,7 +68,7 @@ function ENT:UpdateTurret( parent, body, t )
     if IsValid( user ) then
         self:SetIsFiring( user:KeyDown( 1 ) and CanUseWeaponry( user ) ) -- IN_ATTACK
 
-        local fromPos = body:GetPos() + body:GetUp() * self:GetBulletOffset()[3]
+        local fromPos = body:GetPos() + body:GetUp() * self:GetEffectOffset()[3]
         local aimPos = SERVER and user:GlideGetAimPos() or Glide.GetCameraAimPos()
         local dir = aimPos - fromPos
         dir:Normalize()
@@ -106,42 +104,26 @@ function ENT:UpdateTurret( parent, body, t )
     self.nextFire = self.nextFire or 0
 
     local isFiring = self:GetIsFiring()
-
     if isFiring and t > self.nextFire then
-        local pos = body:LocalToWorld( self:GetBulletOffset() )
-        local ang = body:GetAngles()
-
         self.nextFire = t + self:GetFireDelay()
-        self:FireBullet( pos, ang, user, self:GetRight() )
+        if self:GetEnableFiringEffect() then
+            local pos = body:LocalToWorld( self:GetEffectOffset() )
+            local effectDirection = self:GetEffectDirection()
+            self:FireEffect( pos, effectDirection )            
+        end
     end
-
 end
 
-function ENT:FireBullet( pos, ang, attacker, shellDir ) -- Effect stuff
-  --  local dir = ang:Forward()
-  --  local distance = self.BulletMaxDistance
-
-    -- Muzzle flash & trace
-   -- local eff = EffectData()
-   -- eff:SetOrigin( pos )
-   -- eff:SetStart( pos + dir * distance )
-   -- eff:SetFlags( 0x4 )
-    --eff:SetEntity( self )
-   -- util.Effect( "Explosion", eff )
-
-    -- Shells
-    --eff = EffectData()
-    --eff:SetOrigin( pos - dir * 30 )
-    --eff:SetEntity( self )
-    --eff:SetMagnitude( 1 )
-    --eff:SetRadius( 5 )
-    --eff:SetScale( 1 )
-
-    -- Throw shells away from the body
-    --if not shellDir then
-     --   shellDir = pos - self:GetPos()
-    --    shellDir:Normalize()
-  --  end
-   -- eff:SetAngles( shellDir:Angle() )
-    --util.Effect( "RifleShellEject", eff )
+function ENT:FireEffect( receivedPos, direction ) -- The ones already in here are sort of a QOL "preset" for cannons/launchers and recoiless rifles
+    local eff = EffectData()
+    eff:SetOrigin( receivedPos )
+    eff:SetScale( 1 )
+    if self:GetEffectType() == "cannon" then
+        eff:SetNormal( direction )
+        util.Effect( "glide_emplacement_cannon", eff ) 
+    else
+        eff:SetScale( 0.2 )
+        util.Effect( "glide_explosion", eff )
+    end
 end
+

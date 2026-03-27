@@ -31,16 +31,15 @@ if SERVER then
         local vehicle = self.Vehicle
         local turret = vehicle:GetTurret()
         local ang = turret:GetGunBody():GetAngles()
-        local target
-        
+
         if not turret:IsValid() then return end
 
         local pos = vehicle:LocalToWorld( self.ProjectileOffsets[self.projectileOffsetIndex] )
         local missile = ents.Create( "glide_guided_missile" )
+        missile:SetupMissile( vehicle:GetDriver(), vehicle )
         missile:SetPos( pos )
         missile:SetAngles( ang )
         missile:Spawn()
-        missile:SetupMissile( attacker, parent )
         missile:SetModelScale( self.MissileModelScale )
 
         missile.damage = missile.damage * self.ProjectileDamageMult

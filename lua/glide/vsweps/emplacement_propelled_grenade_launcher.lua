@@ -31,15 +31,8 @@ if SERVER then
         local vehicle = self.Vehicle
         local turret = vehicle:GetTurret()
         local ang = turret:GetGunBody():GetAngles()
-        local target
         
         if not turret:IsValid() then return end
-
-        -- Only make the missile follow the target when
-        -- using the homing missiles and with a "hard" lock-on
-        if self.EnableLockOn and vehicle:GetLockOnState() == 2 then
-            target = vehicle:GetLockOnTarget()
-        end
 
         local pos = vehicle:LocalToWorld( self.ProjectileOffsets[self.projectileOffsetIndex] )
         local missile = ents.Create( "glide_propelled_grenade" )

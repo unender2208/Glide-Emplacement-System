@@ -10,6 +10,7 @@ DEFINE_BASECLASS( "base_glide_emplacement" )
 ENT.GlideCategory = "UNENDER_EMPLACEMENTS"
 ENT.ChassisModel = "models/glide/glide_emplacements/dshkm tripod.mdl"
 
+ENT.EnableADS = true -- Self explanitory, determines whether or not aiming down sights with right click is allowed on the emplacement
 ENT.MaxChassisHealth = 200
 
 function ENT:SetupDataTables()
@@ -20,6 +21,7 @@ function ENT:SetupDataTables()
     -- Store our turret entity, as well as the seat that controls it.
     self:NetworkVar( "Entity", "Turret" )
     self:NetworkVar( "Entity", "TurretSeat" )
+    self:NetworkVar( "Bool", "AimingDownSights" )
 end
 
 function ENT:GetSpawnColor()
@@ -30,28 +32,11 @@ if CLIENT then
     ENT.CameraOffset = Vector( -60, 20, 20 )
     ENT.CameraAngleOffset = Angle( 0, 0, 0 )
 
-    local Camera = Glide.Camera
     -- Temporary variables to move/rotate the turret's bones and seat.
     local ang = Angle()
     local matrix = Matrix()
 
-    function ENT:OnLocalPlayerEnter( seatIndex )
-        self:DisableCrosshair()
-        -- Enable the crosshair when a player enters the turret seat
-        self:EnableCrosshair( { iconType = "dot", color = Color( 255, 0, 0), size = 0.02 })
-        -- Let the base class handle it
-        BaseClass.OnLocalPlayerEnter( self, seatIndex )
-    end
-
-    function ENT:OnLocalPlayerExit()
-        self:DisableCrosshair()
-    end
-
-    -- This function runs every frame when the crosshair is enabled.
-    function ENT:UpdateCrosshairPosition()
-        -- Put right at the local player's camera aim position.
-        self.crosshair.origin = Glide.GetCameraAimPos()
-    end
+    local crosshairInfo = { iconType = "dot", color = Color( 255, 255, 255), size = 0.02 }
 
     function ENT:OnActivateMisc()
         -- Let the base class do some initialization
@@ -99,16 +84,29 @@ if CLIENT then
         self:ManipulateBoneAngles( self.turretWeaponBone, ang )
 
         function self:GetFirstPersonOffset( seatIndex, localEyePos )
-            local vehicle = Camera.vehicle
-            local rad = math.rad( bodyAng[2] ) -- The angle we're using as reference
-            local rad2 = math.rad( bodyAng[1] ) -- The angle we're using as reference ( for pitch )
-            localEyePos = vehicle:WorldToLocal( self:GetPos() ) 
-            localEyePos[3] = localEyePos[3] + 18 + math.tan( rad2 ) * 20  -- Pseudo ADS
-            localEyePos[2] = localEyePos[2] + math.sin( rad ) * -29
-            localEyePos[1] = localEyePos[1] + math.cos( rad ) * -29
-
+            if self:GetAimingDownSights() then
+                self:DisableCrosshair()
+                localEyePos = self:AimDownSights( 10.2, -25 ) -- Function made specifically for this entity base, first value is the up/down offset, meanwhile the second value is the forward/back offset.
+            else
+                self:EnableCrosshair( crosshairInfo ) 
+                localEyePos[3] = localEyePos[3] + 33 -- Upwards offset because the thing lowkey retarded lol                      
+            end
             return localEyePos
         end
+    end
+
+    function ENT:OnLocalPlayerExit()
+        self:DisableCrosshair()
+    end
+
+    function ENT:OnLocalPlayerEnter()
+        self:EnableCrosshair( crosshairInfo )
+    end
+
+    -- This function runs every frame when the crosshair is enabled.
+    function ENT:UpdateCrosshairPosition()
+        -- Put right at the local player's camera aim position.
+        self.crosshair.origin = Glide.GetCameraAimPos()
     end
 
     -- Override the default camera type for the turret seat
@@ -119,7 +117,7 @@ if CLIENT then
     -- Don't muffle sounds while sitting on the turret seat,
     -- or on the rear exterior seats.
     function ENT:AllowFirstPersonMuffledSound( seatIndex )
-        return false 
+        return false
     end
 
 end
@@ -135,7 +133,7 @@ if SERVER then
     -- Allow the passengers of seats created after
     -- the turret seat to fall off the vehicle.
     function ENT:CanFallOnCollision( seatIndex )
-        return true 
+        return true
     end
 
     function ENT:CreateFeatures()
@@ -146,7 +144,7 @@ if SERVER then
         self:SetTurretSeat( turretSeat )
 
         local turret = self:CreateEmplacementTurret( self, Vector( 0, 0, 0 ), Angle() )
-        turret:SetFireDelay( 0.13 )
+        turret:SetFireDelay( 0.11 )
         turret:SetBulletOffset( Vector( 45, 0, 11 ) )
         turret:SetShellCasingsOffsetY( 54 )
         turret:SetMinPitch( -40 )
@@ -155,7 +153,7 @@ if SERVER then
         turret:SetShootLoopSound( "glide/glide_emplacement_base/glide_dhsk/dshk_loop.wav" )
         turret:SetShootStopSound( "glide/glide_emplacement_base/glide_dhsk/dshk_lastshot.wav" )
 
-        turret.BulletDamage = 40
+        turret.BulletDamage = 10
         Glide.HideEntity( turret, true )
         Glide.HideEntity( turret:GetGunBody(), true )
 
@@ -175,14 +173,24 @@ if SERVER then
 
         local offset = Vector()
         local radius = 40 -- You dont HAVE to make a separate variable for the radius, just putting this here for anyone needing reference.
-        
+
         if IsValid( seat ) then
             local rad = math.rad( bodyAng[2] ) -- The angle we're using as reference
             offset[1] = math.cos( rad ) * -radius --  You may have to fiddle with the radius value and the order of the sin/cos stuff to get it perfectly behind something. Math BS
-            offset[2] = math.sin( rad ) * -radius -- ^^^^
+            offset[2] = math.sin( rad ) * -radius -- Reminder that both radius's have to be the same! unless you want a weird spiral offset thing...
             offset[3] = -48 -- Sets the seat on the "ground"
             local LTWVector = LocalToWorld( Vector( offset ), bodyAng, self:GetPos(), self:GetAngles() ) -- Fixes the offset to be from the world to local
             seat:SetPos( LTWVector )
+        end
+    end
+
+    function ENT:OnSeatInput( seatIndex, action, pressed )
+        if self.EnableADS then
+            if action == "aim_down_sights" and pressed then
+                self:SetAimingDownSights( true )
+            elseif action == "aim_down_sights" and not pressed then
+                self:SetAimingDownSights( false )
+            end
         end
     end
 end

@@ -1,3 +1,4 @@
+VSWEP.Base = "base"
 VSWEP.Name = "#glide.weapons.mgs"
 VSWEP.Icon = "glide/icons/bullets.png"
 
@@ -53,11 +54,11 @@ if SERVER then
 
     -- A one-shot sound to play when the weapon fires.
     VSWEP.SingleShotSound = ""
-
     -- A one-shot sound to play when the weapon starts reloading. ( FOR ENABLERELOADSEQUENCE = TRUE !!! )
     VSWEP.ReloadStartSound = ""
     -- A one-shot sound to play when the weapon finishes reloading.
     VSWEP.ReloadEndSound = ""
+    
 end
 
 if CLIENT then

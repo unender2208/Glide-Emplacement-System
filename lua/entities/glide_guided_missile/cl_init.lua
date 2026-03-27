@@ -8,8 +8,6 @@ function ENT:Initialize()
     self.missileSounds:SetActivateCallback( "ActivateSound" )
     self.missileSounds:SetDeactivateCallback( "DeactivateSound" )
 
-    -- Assume we have one for now, to avoid issues with the lock-on warnings clientside
-    self:SetHasTarget( true )
 
     -- Update model angle/offset right away
     self:UpdateModelRenderMultiply()
@@ -70,11 +68,6 @@ local CurTime = CurTime
 
 function ENT:Think()
 
-    net.Start( "CrosshairAimPos")
-        net.WriteVector( Glide.GetCameraAimPos() )
-        --print( Glide.GetCameraAimPos() )
-    net.SendToServer()
-
     if self.missileSounds then
         self.missileSounds:Think()
     end
@@ -91,7 +84,6 @@ function ENT:Think()
         Effect( "glide_missile", eff )
     end
 
-
     local model = self:GetModel()
 
     if model ~= self.lastModel then
@@ -99,6 +91,11 @@ function ENT:Think()
     end
 
     self:SetNextClientThink( CurTime() + 0.02 )
+
+ --   net.Start( "CrosshairAimPos")
+     --   net.WriteVector( LocalPlayer():GlideGetAimPos() )
+    --    print( LocalPlayer:GlideGetAimPos() )
+  --  net.SendToServer()
 
     return true
 end

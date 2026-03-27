@@ -13,6 +13,5 @@ ENT.DoNotDuplicate = true
 ENT.DisableDuplicator = true
 
 function ENT:SetupDataTables()
-    self:NetworkVar( "Bool", "HasTarget" )
     self:NetworkVar( "Float", "Effectiveness" )
 end

@@ -129,6 +129,14 @@ function ENT:Think()
     TraceHull( traceData )
 
     if not ray.HitSky and ray.Hit then
+        if ray.MatType == 77 then
+            local eff = EffectData() -- Cool spark effect
+            eff:SetOrigin( self:GetPos() )
+            eff:SetScale( 5 )
+            eff:SetColor( 100 )
+            eff:SetNormal( -self:GetForward() )
+            util.Effect( "glide_metal_impact", eff )
+        end
         self:Explode()
     end
 

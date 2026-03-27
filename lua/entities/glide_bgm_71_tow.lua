@@ -11,7 +11,6 @@ ENT.GlideCategory = "UNENDER_EMPLACEMENTS"
 ENT.ChassisModel = "models/glide/glide_emplacements/m220 tow launcher.mdl"
 
 ENT.MaxChassisHealth = 200
-ENT.ChassisMass = 1000
 
 function ENT:SetupDataTables()
     -- Call the base class' `SetupDataTables`
@@ -173,6 +172,9 @@ if SERVER then
         local turret = self:CreateFakeTurret( self, Vector( -0, 4.3, 7 ), Angle() )
         turret:SetFireDelay( 8 )
         turret:SetViewpunchMultiplier( 50 )
+        turret:SetEnableFiringEffect( true )
+        turret:SetEffectOffset( Vector ( -30, 0, 33 ) )
+        turret:SetEffectDirection( self:GetForward() * 1 )
 
         Glide.HideEntity( turret, true  )
         Glide.HideEntity( turret:GetGunBody(), true  )
@@ -182,11 +184,14 @@ if SERVER then
         -- Store the seat to be used client-side
         self:SetTurretSeat( turretSeat )
 
-        self:CreateSupport( Vector( 0, 0, -5 ), Angle() )
+        self:CreateSupport( Vector( -25, -30, 0 ), Angle(), {
+            supportModel = "models/squad/sf_plates/sf_plate5x5.mdl",
+            mass = 5000
+        } )
 
         for _, w in ipairs( self.supports ) do
             local weld = constraint.Weld( self, w, 0, 0, 0, false, true ) -- Connects the created support to the gun/chassis itself ( if you know a better way to do this, go for it )
-            Glide.HideEntity( w, true   )
+            Glide.HideEntity( w, true )
         end
     end
 
