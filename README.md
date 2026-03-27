@@ -1,2 +1,1 @@
-Most of the lua stuff has alot of comments to help make this more readable, as well as to help you make your own emplacements
-I couldnt include models, mats, or sounds here because github lowkey retarded and wouldnt let me upload them, so mb 
+Most of the lua stuff has alot of comments to help make this more readable, as well as to help you make your own emplacements. I couldnt include models, mats, or sounds here because github lowkey retarded and wouldnt let me upload them, so mb 
